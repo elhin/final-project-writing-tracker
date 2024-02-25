@@ -1,0 +1,457 @@
+import tkinter as tk
+import ttkbootstrap as ttk
+import datetime
+
+#current issues to resolve 
+###checkbox not working (works when removed from the program)
+
+###FEATURES
+#display works ✔ - accesses file and splits and outputs information found there
+#add work ✔ - accesses file and appends work information upon save button click
+#error window ✔ - done
+#edit work ✔ - done
+#delete work ✔ - done
+### add date updated/created!!
+#sort displayed works ❌ (extra, not crucial)
+#visuals ❌ (extra, not crucial)
+
+###EDITOR PLANNING###
+#open document
+#save entries as a list
+#find list index of planned edit
+#replace list index with edited content
+#print all content back into the document
+
+#global variables(evil)
+y = ''
+COMPLETED = 0
+
+def print_complete(x):
+    global COMPLETED
+    print(x)
+    COMPLETED = x
+
+def openNewWindow():
+    addWork = tk.Tk()
+    addWork.geometry('700x500')
+    addWork.title('Demo')
+
+#variables
+    global COMPLETED
+    completeStatus = tk.IntVar()
+    title = tk.StringVar()
+    wordcount = tk.StringVar()
+
+    frame = ttk.Frame(addWork)
+    title_label = ttk.Label(frame, text="Work Title:")
+    title_entry = ttk.Entry(frame, textvariable=title)
+    summary_label = ttk.Label(frame, text="Work Summary:")
+    text = tk.Text(frame)
+    #checkbox value doesn't pass forward !!!!
+    complete = ttk.Checkbutton(frame, text="Complete?", 
+                               variable = completeStatus, 
+                               onvalue=1, offvalue=0,
+                               command=print_complete(completeStatus))
+    completeStatus.trace_add("write", get_complete_status)
+    wordcount_label = ttk.Label(frame, text="Word Count:")
+    wordcount_entry = ttk.Entry(frame, textvariable=wordcount)
+
+    cancel = ttk.Button(frame, text="Cancel", command=lambda: cancel_process(addWork))
+    save = ttk.Button(frame, 
+                      text="SAVE", 
+                      command= lambda: saveWork(addWork, title_entry.get(), text.get("1.0","end-1c"),completeStatus.get(),wordcount_entry.get()))
+
+    #arranging stuff
+    title_entry.grid(column=0, row=1, padx=5)
+    title_label.grid(column=0, row=0, padx=5, pady=2)
+    summary_label.grid(column = 0, row=2)
+    text.grid(column=0, row=3, columnspan=3, rowspan=3, padx=5, pady=2)
+    complete.grid(column=2, row=1, padx=5, pady=2)
+    wordcount_label.grid(column=1, row=0, padx=5)
+    wordcount_entry.grid(column=1, row=1, padx=5, pady=2)
+    frame.grid(column=1, row=0, padx=2, pady=2)
+    cancel.grid(column=1, row=6, padx=5)
+    save.grid(column= 2, row=6, padx=5)
+
+    addWork.mainloop()
+
+def on_frame_configure(scrollable_canvas,event):
+    scrollable_canvas.configure(scrollregion=scrollable_canvas.bbox("all"))
+    
+def saveWork(window, title, text, complete, wordcount):
+    if title == "":
+        error_code = 1
+        errorMessage(error_code)
+    else:
+        pass
+    if text == "":
+        error_code = 3
+        errorMessage(error_code)
+    else: 
+        pass
+    wordcount = str(wordcount)
+    if wordcount.isdigit() and wordcount != "":
+        pass
+    else:
+        error_code = 2
+        errorMessage(error_code)
+    wordcount = str(wordcount)
+    global COMPLETED
+    complete = COMPLETED
+    print("Completion status:")
+    print(complete)
+    print(COMPLETED)
+    f = open('reffile.txt', 'a')
+    f.write(title + "///" + text + "///" + str(complete) + "///" + wordcount)
+    f.write("\n------")
+    f.close()
+    window.destroy()
+    displayWorks()
+
+#gets the value successfully, but doesn't pass it to y
+def confirm_selected_title(x):
+    global y
+    print(x)
+    y = x
+
+def get_complete_status(x):
+    print(x)
+    global COMPLETED
+    if x == 1:
+        COMPLETED = 1
+    else:
+        pass
+
+def select_title():
+    global y
+    editor = tk.Tk()
+    titles.insert(0, "Title Select")
+    selection_frame1 = ttk.Frame(editor)
+    selection_frame1.grid(column = 0, row = 0)
+    title_label = ttk.Label(selection_frame1,text="Choose Title...")
+    title_label.grid(column=0, row=0)
+    title_selection = tk.StringVar(value="Choose Title...")
+    title_selection.trace_add('write', confirm_selected_title)
+    title_selector = ttk.OptionMenu(selection_frame1, title_selection, *titles, command = confirm_selected_title)
+    title_selector.grid(column=0, row = 1)
+    confirm_button = ttk.Button(selection_frame1, text = "Confirm", command= lambda: edit_work(editor))
+    confirm_button.grid(column =1, row=1)
+    editor.mainloop()
+
+def cancel_process(window):
+    global titles
+    titles.pop(0)
+    window.destroy()
+    return    
+
+def edit_work(editor):
+    global y
+    editor.destroy()
+    edit_work = tk.Tk()
+    global titles
+    titles.pop(0)
+    print("This is the ", y)
+    f = open('reffile.txt', "r+")
+    content = f.read()
+    index = content.count("------")
+    if index != 0:
+        list_of_works = content.split("\n------")
+        titlesdisplay = []
+        summaries = []
+        completion_statuses=[]
+        wordcounts=[]
+        for i in range(0,(len(list_of_works)-1)):
+            current_work = list_of_works[i].split("///")
+            titlesdisplay.append(current_work[0])
+            summaries.append(current_work[1])
+            completion_statuses.append(current_work[2])
+            wordcounts.append(current_work[3])
+        counter = 0
+        while y != titlesdisplay[counter]:
+            print(counter)
+            counter +=1
+        if y == titlesdisplay[counter]:
+            frame = ttk.Frame(edit_work)
+            final_title_display = tk.StringVar()
+            completeStatus = tk.IntVar()
+            completeStatus.set(completion_statuses[counter]) 
+            summary = tk.StringVar()
+            summary.set(summaries[counter])
+            wordcount = tk.StringVar()
+            wordcount.set(wordcounts[counter])
+            final_title_display.set(y)
+            title_label = ttk.Label(frame, text="Work Title:")
+            title_entry = ttk.Entry(frame, textvariable=final_title_display)
+            title_entry.insert(0, str(final_title_display.get()))
+            summary_label = ttk.Label(frame, text="Work Summary:")
+            text = tk.Text(frame)
+            text.insert('1.0', str(summary.get()))
+            #checkbox value doesn't pass forward !!!!
+            complete = ttk.Checkbutton(frame, text="Complete?", variable = completeStatus)
+            completeStatus = str(completeStatus)
+            wordcount_label = ttk.Label(frame, text="Word Count:")
+            wordcount_entry = ttk.Entry(frame, textvariable=wordcount)
+            wordcount_entry.insert(0,str(wordcount.get()))
+            cancel = ttk.Button(frame,text="Cancel",command= lambda: cancel_process(edit_work))
+            save = ttk.Button(frame, 
+                            text="SAVE EDIT", 
+                            command= lambda: saveEditedWork(edit_work, counter, title_entry.get(), text.get("1.0","end-1c"),completeStatus,wordcount_entry.get()))
+            delete = ttk.Button(frame, text="DELETE WORK",command= lambda: confirmationMessage(edit_work, counter))
+
+            #arranging stuff
+            title_entry.grid(column=0, row=1, padx=5)
+            title_label.grid(column=0, row=0, padx=5, pady=2)
+            summary_label.grid(column = 0, row=2)
+            text.grid(column=0, row=3, columnspan=3, rowspan=3, padx=5, pady=2)
+            complete.grid(column=2, row=1, padx=5, pady=2)
+            wordcount_label.grid(column=1, row=0, padx=5)
+            wordcount_entry.grid(column=1, row=1, padx=5, pady=2)
+            frame.grid(column=1, row=0, padx=2, pady=2)
+            save.grid(column= 2, row=6, padx=5)
+            delete.grid(column=1,row=6, padx=5)
+            cancel.grid(column=0, row=6, padx=5)
+        else:
+            print("error")   
+
+    f.close()
+    edit_work.mainloop()
+
+#use counter to choose what element of the list to edit
+def saveEditedWork(edit_work, counter, title_entry, text, completeStatus, wordcount):
+    f = open("reffile.txt", 'r+')
+    content = f.read()
+    index = content.count("------")
+    perm_index = index
+    if index != 0:
+        list_of_works = content.split("\n------")
+        titles = []
+        summaries = []
+        completion_statuses=[]
+        wordcounts=[]
+        for i in range(0,(len(list_of_works)-1)):
+            current_work = list_of_works[i].split("///")
+            titles.append(current_work[0])
+            summaries.append(current_work[1])
+            completion_statuses.append(current_work[2])
+            wordcounts.append(current_work[3])
+    if titles[counter] == "":
+        error_code = 1
+        errorMessage(error_code)
+    else:
+        pass
+    titles[counter] = title_entry
+    if summaries [counter] == "":
+        error_code = 3
+        errorMessage(error_code)
+    else: 
+        pass
+    summaries[counter] = text
+    completion_statuses[counter] = completeStatus
+    wordcount = str(wordcount)
+    print(wordcount)
+    if wordcount.isdigit() and wordcount != "":
+        pass
+    else:
+        error_code = 2
+        errorMessage(error_code)
+    wordcounts[counter] = wordcount
+    f.close()
+    f = open('reffile.txt', 'w+')
+    index = perm_index
+    counter = 0
+    for i in range(0,perm_index):
+        f.write(titles[counter] + "///" + summaries[counter] + "///" + completion_statuses[counter] + "///" + wordcounts[counter])
+        f.write("\n------")  
+        counter += 1
+    f.close()
+    edit_work.destroy()
+    displayWorks()
+
+#send error message if wc not valid - works
+def errorMessage(error_code):
+    #codes:
+    #1 - no title
+    #2 - no wordcount
+    #3 - no summary
+    error = tk.Tk()
+    error.title("Error")
+    error.geometry('200x200')
+    if error_code == 1:
+        errorMessage = ttk.Label(error, text="Title cannot be empty!", font="24")
+        errorMessage.grid(column=0,row=0)
+    elif error_code ==2:
+        errorMessage = ttk.Label(error, text="Wordcount is not numbers!", font="24")
+        errorMessage.grid(column=0,row=0)
+    elif error_code==3:
+        errorMessage = ttk.Label(error, text="Summary cannot be left blank!", font="24")
+        errorMessage.grid(column=0,row=0)
+    else:
+        errorMessage = ttk.Label(error, text="Unknown Error.", font="24")
+        errorMessage.grid(column=0,row=0)
+    errorClose = ttk.Button(error, text="Close", command = lambda: error.destroy())
+    errorClose.grid(column=0, row=1)
+    error.mainloop()
+
+def confirmationMessage(edit_work, counter):
+    confirm = tk.Tk()
+    confirm.title("Confirm Deletion")
+    confirm.geometry('200x200')
+    confirmMessage = ttk.Label(confirm, text="Are you sure you want to delete this work?", font = "24")
+    confirmMessage.grid(column=0,row=0, columnspan=2)
+    confirmYes = ttk.Button(confirm, text="Yes", command =lambda: delete_work(edit_work, counter, confirm))
+    confirmNo = ttk.Button(confirm, text="No", command = lambda: (cancel_process(confirm)))
+    confirmYes.grid(column=0, row=1)
+    confirmNo.grid(column=1, row=1)
+    confirm.mainloop()
+
+def delete_work(edit_work, counter, c):
+    global titles
+    f = open("reffile.txt", 'r+')
+    content = f.read()
+    index = content.count("------")
+    perm_index = index
+    titles.pop(0)
+    if index != 0:
+        list_of_works = content.split("\n------")
+        titles = []
+        summaries = []
+        completion_statuses=[]
+        wordcounts=[]
+        for i in range(0,(len(list_of_works)-1)):
+            current_work = list_of_works[i].split("///")
+            titles.append(current_work[0])
+            summaries.append(current_work[1])
+            completion_statuses.append(current_work[2])
+            wordcounts.append(current_work[3])
+    titles.pop(counter)
+    summaries.pop(counter)
+    completion_statuses.pop(counter)
+    wordcounts.pop(counter)
+    f.close()
+    f = open('reffile.txt', 'w+')
+    index = perm_index - 1
+    counter = 0
+    for i in range(0,index):
+        f.write(titles[counter] + "///" + summaries[counter] + "///" + completion_statuses[counter] + "///" + wordcounts[counter])
+        f.write("\n------")  
+        counter += 1
+    f.close()
+    c.destroy()
+    edit_work.destroy()
+    displayWorks()
+
+#displays all works entered & saved in the document
+def displayWorks():
+    scrollable_canvas = tk.Canvas(work_display, borderwidth=0, background="#ffffff")
+    vsb = ttk.Scrollbar(work_display, orient = "vertical", command=scrollable_canvas.yview)
+    scrollable_canvas.grid(column=0, row=0, columnspan = 4, rowspan=4,sticky="nsew")
+    vsb.grid(column=4, row=0, sticky="ns",columnspan=4)
+    scrollable_canvas.configure(yscrollcommand=vsb.set)
+    refreshable_display = ttk.Frame(scrollable_canvas)
+
+    refreshable_display.grid(column = 0, row = 0)
+    refreshable_display.bind("<Configure>", lambda event: on_frame_configure(scrollable_canvas,event))
+    scrollable_canvas.create_window((0,0), window=refreshable_display, anchor="nw")
+    scrollable_canvas.update_idletasks()
+    scrollable_canvas.configure(scrollregion=scrollable_canvas.bbox("all"))
+    
+    f = open('reffile.txt', "r")
+    content = f.read()
+    index = content.count("------")
+    if index != 0:
+        list_of_works = content.split("\n------")
+        row_iterator = 0
+        titles = []
+        summaries = []
+        completion_statuses=[]
+        wordcounts=[]
+        for i in range(0,(len(list_of_works)-1)):
+            current_work = list_of_works[i].split("///")
+            titles.append(current_work[0])
+            summaries.append(current_work[1])
+            completion_statuses.append(current_work[2])
+            wordcounts.append(current_work[3])
+        counter = 0
+        print(len(completion_statuses))
+        for i in range(0,(len(titles))):
+            complete = "No"
+            if completion_statuses[i] == 1:
+                complete = "Yes"
+            elif completion_statuses[i] == 0:
+                complete = "No"
+            else:
+                pass
+            counter +=1
+            title = tk.Label(refreshable_display,text = "Title: " + str(titles[i]))
+            word_count = tk.Label(refreshable_display,text = "Word Count: " + str(wordcounts[i]))
+            complete = tk.Label(refreshable_display,text = "Complete? " + str(complete))
+            summary = tk.Label(refreshable_display,text = "Summary:\n" + str(summaries[i]), wraplength=350)
+            sep = ttk.Separator(refreshable_display,orient='horizontal')
+
+            title.grid(row = row_iterator, column = 0)
+            word_count.grid(row = row_iterator, column = 1)
+            complete.grid(row= row_iterator, column = 2)
+            row_iterator+=1
+            summary.grid(row = row_iterator, column=0, columnspan=3, rowspan=2, padx=2, pady=2)
+            row_iterator+=2
+            sep.grid(row=row_iterator, column=0,columnspan=3,sticky='ew')
+            row_iterator+=1
+    else:
+        text = tk.Label(refreshable_display,text="No works to display.")
+        text.grid(column=0, row = 0)
+    f.close()
+    while True:
+        try:
+            return titles
+        except:
+            titles = []
+            print("No titles")
+
+def sort(x):
+    f = open('reffile.txt', "r+")
+    if x == "Alphabetical (A-Z)":
+        pass
+    elif x == "Highest Wordcount":
+        pass
+    elif x == "Lowest Wordcount":
+        pass
+    elif x == "Most Recent":
+        pass
+    elif x == "Oldest":
+        pass
+    else:
+        pass
+    print(x)
+    f.close()
+
+#main window
+root = ttk.Window()
+root.geometry('800x450')
+root.title('Main Window')
+
+#display info
+work_display = ttk.Frame(root)
+work_display.grid(column = 0, row=0, sticky="nsew")
+titles = displayWorks()
+
+#sort works
+work_sorter_holder = ttk.Frame(root)
+sort_choice = ttk.StringVar()
+sorted = sort_choice
+sort_options = ["Choose Sort Option...", "Alphabetical (A-Z)", "Highest Wordcount","Lowest Wordcount", "Most Recent", "Oldest"]
+choose_sort = ttk.OptionMenu(work_sorter_holder, sort_choice, *sort_options, command= lambda e: sorted.set(sort_choice.get()))
+sortbutton = ttk.Button(work_sorter_holder,text="Sort", command= lambda: sort(sorted.get()))
+
+choose_sort.grid(column=0, row=0,pady=3)
+sortbutton.grid(column=0, row=1, pady=3)
+work_sorter_holder.grid(column=1, row=0)
+
+#buttons - fix dimensions and resize weight
+buttons_holder = ttk.Frame(root)
+button = ttk.Button(buttons_holder,text="Add Work", command= openNewWindow)
+button1 = ttk.Button(buttons_holder,text="Edit or Delete Work", command= select_title)
+button.grid(column=0, row=0,pady=3)
+button1.grid(column=0, row=1,pady=3)
+buttons_holder.grid(column=1, row=1)
+
+root.mainloop()
